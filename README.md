@@ -18,6 +18,16 @@ brew install twiced-technology-gmbh/tap/agentwatch
 go install github.com/twiced-technology-gmbh/agentwatch/cmd/agentwatch@latest
 ```
 
+### Claude Code hook
+
+Install the hook to have all Claude Code sessions automatically appear on the board:
+
+```bash
+npx @toolr/seedr add agentwatch --type hook
+```
+
+This works with all Claude instances out of the box — no per-project setup needed. The hook writes to both the global board and a per-project board at `<project-root>/.agents/agentwatch/` when inside a git repository. See [seedr.toolr.dev/hooks/agentwatch](https://seedr.toolr.dev/hooks/agentwatch) for details.
+
 ## Quick start
 
 ```bash
@@ -40,7 +50,7 @@ Edit `~/.config/agentwatch/config.yml` to customize statuses.
 You can run a separate board per project using `--dir`:
 
 ```bash
-agentwatch --dir /path/to/project/.agentwatch
+agentwatch --dir /path/to/project
 ```
 
-Create the board by adding a `config.yml` in that directory with the same format as the global one. Tasks go into a `tasks/` subdirectory next to it.
+This resolves to `/path/to/project/.agents/agentwatch/` and auto-creates the board if it doesn't exist. The hook automatically writes to both the global and project board.
