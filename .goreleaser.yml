@@ -1,0 +1,28 @@
+version: 2
+
+builds:
+  - main: ./cmd/agentwatch
+    binary: agentwatch
+    ldflags:
+      - -s -w -X github.com/twiced-technology-gmbh/agentwatch/cmd.version={{.Version}}
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - format: tar.gz
+
+brews:
+  - repository:
+      owner: twiced-technology-gmbh
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Formula
+    homepage: https://github.com/twiced-technology-gmbh/agentwatch
+    description: Terminal UI for watching AI agents work
+    license: MIT
+    test: |
+      assert_match version.to_s, shell_output("#{bin}/agentwatch --version")
