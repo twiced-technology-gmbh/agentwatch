@@ -394,6 +394,38 @@ func Init(dir, name string) (*Config, error) {
 	return cfg, nil
 }
 
+// InitAgent creates a board tailored for watching AI agents.
+// Uses statuses: Idle, In Progress, PermissionRequest, Waiting, Finished.
+func InitAgent(dir string) (*Config, error) {
+	const dirMode = 0o750
+
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		return nil, fmt.Errorf("resolving path: %w", err)
+	}
+
+	cfg := NewDefault("agentwatch")
+	cfg.SetDir(absDir)
+	cfg.Statuses = []StatusConfig{
+		{Name: "Idle"},
+		{Name: "In Progress"},
+		{Name: "PermissionRequest"},
+		{Name: "Waiting"},
+		{Name: "Finished"},
+	}
+	cfg.Defaults.Status = "Idle"
+
+	if err := os.MkdirAll(cfg.TasksPath(), dirMode); err != nil {
+		return nil, fmt.Errorf("creating tasks directory: %w", err)
+	}
+
+	if err := cfg.Save(); err != nil {
+		return nil, fmt.Errorf("writing config: %w", err)
+	}
+
+	return cfg, nil
+}
+
 // Save writes the config to its config file.
 func (c *Config) Save() error {
 	data, err := yaml.Marshal(c)

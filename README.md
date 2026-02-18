@@ -6,6 +6,14 @@ Tasks are stored as Markdown files with YAML frontmatter, making everything plai
 
 ## Install
 
+### Homebrew
+
+```bash
+brew install twiced-technology-gmbh/tap/agentwatch
+```
+
+### From source
+
 ```bash
 go install github.com/twiced-technology-gmbh/agentwatch/cmd/agentwatch@latest
 ```
@@ -13,29 +21,26 @@ go install github.com/twiced-technology-gmbh/agentwatch/cmd/agentwatch@latest
 ## Quick start
 
 ```bash
-# Initialize a board in the current directory
-agentwatch init
-
-# Launch the TUI
-agentwatch tui
+# Launch the TUI — auto-creates ~/.config/agentwatch on first run
+agentwatch
 ```
 
-## CLI commands
+## Configuration
+
+The global board lives at `~/.config/agentwatch/config.yml` and is auto-created on first run with these columns:
 
 ```
-agentwatch init          Create a new board
-agentwatch tui           Launch the interactive terminal UI
-agentwatch list          List tasks (with filters, sorting, grouping)
-agentwatch board         Show board summary
-agentwatch create TITLE  Create a task
-agentwatch move ID       Move a task to a status
-agentwatch show ID       Show task details
-agentwatch edit ID       Edit a task in $EDITOR
-agentwatch delete ID     Delete a task
+Idle → In Progress → PermissionRequest → Waiting → Finished
 ```
 
-Use `--json` on any command for machine-readable output.
+Edit `~/.config/agentwatch/config.yml` to customize statuses.
 
-## Requirements
+### Project boards
 
-Go 1.25+
+You can run a separate board per project using `--dir`:
+
+```bash
+agentwatch --dir /path/to/project/.agentwatch
+```
+
+Create the board by adding a `config.yml` in that directory with the same format as the global one. Tasks go into a `tasks/` subdirectory next to it.

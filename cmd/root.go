@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -30,13 +31,13 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:   "agentwatch",
-	Short: "A file-based Kanban tool powered by Markdown",
-	Long: `agentwatch is a CLI tool for managing Kanban boards using plain Markdown files.
-Tasks are stored as individual files with YAML frontmatter, making them
-easy to read, edit, and version-control. Designed for AI agents and humans alike.`,
+	Short: "Terminal UI for watching AI agents work",
+	Long: `agentwatch displays a live Kanban board showing what your AI agents are doing.
+Just run agentwatch to open the TUI. AI tools create and move cards via hooks.`,
 	Version:       version,
 	SilenceErrors: true,
 	SilenceUsage:  true,
+	RunE:          runTUI,
 	PersistentPreRun: func(_ *cobra.Command, _ []string) {
 		if flagNoColor || os.Getenv("NO_COLOR") != "" {
 			output.DisableColor()
@@ -92,7 +93,17 @@ func Execute() {
 	os.Exit(1)
 }
 
+// defaultHomeDir returns the path to ~/.config/agentwatch.
+func defaultHomeDir() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("getting home directory: %w", err)
+	}
+	return filepath.Join(home, ".config/agentwatch"), nil
+}
+
 // resolveDir returns the absolute path to the kanban directory.
+// Falls back to ~/.config/agentwatch if no board is found in the current directory tree.
 func resolveDir() (string, error) {
 	if flagDir != "" {
 		return flagDir, nil
@@ -103,17 +114,39 @@ func resolveDir() (string, error) {
 		return "", fmt.Errorf("getting working directory: %w", err)
 	}
 
-	return config.FindDir(cwd)
+	dir, err := config.FindDir(cwd)
+	if err == nil {
+		return dir, nil
+	}
+
+	// Fall back to ~/.config/agentwatch.
+	return defaultHomeDir()
 }
 
 // loadConfig finds and loads the kanban config.
+// If the resolved directory is ~/.config/agentwatch and it doesn't exist yet,
+// it is auto-created with default agent statuses.
 func loadConfig() (*config.Config, error) {
 	dir, err := resolveDir()
 	if err != nil {
 		return nil, err
 	}
 
-	return config.Load(dir)
+	cfg, err := config.Load(dir)
+	if err == nil {
+		return cfg, nil
+	}
+
+	// Auto-create ~/.config/agentwatch if it's the home default and doesn't exist.
+	if !errors.Is(err, config.ErrNotFound) {
+		return nil, err
+	}
+	homeDir, homeErr := defaultHomeDir()
+	if homeErr != nil || dir != homeDir {
+		return nil, err
+	}
+
+	return config.InitAgent(homeDir)
 }
 
 // outputFormat returns the detected output format from flags/env.
