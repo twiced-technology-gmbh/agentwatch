@@ -4,6 +4,8 @@ A terminal UI for watching AI agents work. AI tools (like Claude) create and mov
 
 Tasks are stored as Markdown files with YAML frontmatter, making everything plaintext and git-friendly.
 
+<video src="https://github.com/twiced-technology-gmbh/agentwatch/raw/main/demo.mp4" width="100%"></video>
+
 ## Install
 
 ### Homebrew
