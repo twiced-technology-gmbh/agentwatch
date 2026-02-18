@@ -102,30 +102,19 @@ func defaultHomeDir() (string, error) {
 	return filepath.Join(home, ".config/agentwatch"), nil
 }
 
-// resolveDir returns the absolute path to the kanban directory.
-// Falls back to ~/.config/agentwatch if no board is found in the current directory tree.
+// resolveDir returns the absolute path to the agentwatch data directory.
+// When --dir is set, resolves to <dir>/.agents/agentwatch.
+// Otherwise falls back to ~/.config/agentwatch.
 func resolveDir() (string, error) {
 	if flagDir != "" {
-		return flagDir, nil
-	}
-
-	cwd, err := os.Getwd()
-	if err != nil {
-		return "", fmt.Errorf("getting working directory: %w", err)
-	}
-
-	dir, err := config.FindDir(cwd)
-	if err == nil {
-		return dir, nil
+		return filepath.Join(flagDir, ".agents", "agentwatch"), nil
 	}
 
 	// Fall back to ~/.config/agentwatch.
 	return defaultHomeDir()
 }
 
-// loadConfig finds and loads the kanban config.
-// If the resolved directory is ~/.config/agentwatch and it doesn't exist yet,
-// it is auto-created with default agent statuses.
+// loadConfig finds and loads the config, auto-creating it if it doesn't exist.
 func loadConfig() (*config.Config, error) {
 	dir, err := resolveDir()
 	if err != nil {
@@ -137,16 +126,11 @@ func loadConfig() (*config.Config, error) {
 		return cfg, nil
 	}
 
-	// Auto-create ~/.config/agentwatch if it's the home default and doesn't exist.
 	if !errors.Is(err, config.ErrNotFound) {
 		return nil, err
 	}
-	homeDir, homeErr := defaultHomeDir()
-	if homeErr != nil || dir != homeDir {
-		return nil, err
-	}
 
-	return config.InitAgent(homeDir)
+	return config.InitAgent(dir)
 }
 
 // outputFormat returns the detected output format from flags/env.
