@@ -63,6 +63,9 @@ type Board struct {
 	lastClickCol  int
 	lastClickRow  int
 	lastClickTime time.Time
+
+	// Per-title sequence numbers for distinguishing duplicate branches.
+	titleSeq map[int]int
 }
 
 // column groups tasks belonging to a single status.
@@ -372,6 +375,24 @@ func (b *Board) loadTasks() {
 			if b.columns[i].status == t.Status {
 				b.columns[i].tasks = append(b.columns[i].tasks, t)
 				break
+			}
+		}
+	}
+
+	// Compute per-title sequence numbers from column-assigned tasks only.
+	titleCount := make(map[string]int)
+	for i := range b.columns {
+		for _, t := range b.columns[i].tasks {
+			titleCount[t.Title]++
+		}
+	}
+	b.titleSeq = make(map[int]int)
+	titleNext := make(map[string]int)
+	for i := range b.columns {
+		for _, t := range b.columns[i].tasks {
+			if titleCount[t.Title] > 1 {
+				titleNext[t.Title]++
+				b.titleSeq[t.ID] = titleNext[t.Title]
 			}
 		}
 	}
@@ -811,11 +832,15 @@ func (b *Board) cardContentLines(t *task.Task, width int) []string {
 			branch = branch[len(prefix):]
 		}
 		branchStyle := tagStyle(branch)
-		branchWidth := cardWidth - assigneeLen
+		seqSuffix := ""
+		if seq, ok := b.titleSeq[t.ID]; ok {
+			seqSuffix = dimStyle.Render(fmt.Sprintf(" #%d", seq))
+		}
+		branchWidth := cardWidth - assigneeLen - lipgloss.Width(seqSuffix)
 		if branchWidth < 1 {
 			branchWidth = 1
 		}
-		contentLines = append(contentLines, branchStyle.Render("WT/BRANCH: "+truncate(branch, branchWidth))+assigneeSuffix)
+		contentLines = append(contentLines, branchStyle.Render("WT/BRANCH: "+truncate(branch, branchWidth))+seqSuffix+assigneeSuffix)
 	} else {
 		// Project board: just the title, no ID
 		titleWidth := cardWidth - assigneeLen
